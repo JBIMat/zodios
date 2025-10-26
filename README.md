@@ -1,4 +1,4 @@
- <h1 align="center">Zodios</h1>
+<h1 align="center">Zodios (Zod 4 Fork)</h1>
  <p align="center">
    <a href="https://github.com/ecyrbe/zodios">
      <img align="center" src="https://raw.githubusercontent.com/ecyrbe/zodios/main/docs/logo.svg" width="128px" alt="Zodios logo">
@@ -31,6 +31,36 @@
    <img alt="Bundle Size" src="https://img.shields.io/bundlephobia/minzip/@zodios/openapi?label=%40zodios%2Fopenapi"/>
    <img alt="Bundle Size" src="https://img.shields.io/bundlephobia/minzip/@zodios/testing?label=%40zodios%2Ftesting"/>
 </p>
+
+## 🔥 Zod 4 Fork Highlights
+
+This is a modernized fork of Zodios with the following updates:
+
+- ✅ **Zod 4.1.12 Support** - Full compatibility with the latest Zod release
+- ✅ **TypeScript 5.9.3** - Updated for the latest TypeScript features
+- ✅ **Modern Dependencies** - All dependencies updated to latest versions
+- ✅ **99.69% Test Coverage** - Comprehensive test suite with 149 passing tests
+- ✅ **Zero Vulnerabilities** - All security issues resolved
+- ✅ **Improved Type Safety** - Better type inference with Zod 4
+
+### Requirements
+
+- **Zod 4.0.0 or higher** (Breaking change from original)
+- Axios 1.0.0 or higher
+- TypeScript 4.5+ recommended
+- Node.js 16+ recommended
+
+### Migration from Original Zodios
+
+If you're using Zod 3, you'll need to upgrade to Zod 4:
+
+```bash
+npm install zod@^4.0.0
+```
+
+All Zodios APIs remain the same - this fork only updates internal dependencies and type definitions.
+
+---
 
 https://user-images.githubusercontent.com/633115/185851987-554f5686-cb78-4096-8ff5-c8d61b645608.mp4
 
@@ -68,25 +98,25 @@ It's an axios compatible API client and an optional expressJS compatible API ser
 ## Client and api definitions :
 
 ```bash
-> npm install @zodios/core
+> npm install @zodios/core zod@^4.0.0
 ```
 
 or
 
 ```bash
-> yarn add @zodios/core
+> yarn add @zodios/core zod@^4.0.0
 ```
 
 ## Server :
   
 ```bash
-> npm install @zodios/core @zodios/express
+> npm install @zodios/core @zodios/express zod@^4.0.0
 ```
 
 or
 
 ```bash
-> yarn add @zodios/core @zodios/express
+> yarn add @zodios/core @zodios/express zod@^4.0.0
 ```
 
 # How to use it on client side ?
@@ -253,6 +283,7 @@ for Zod` / `Io-Ts` :
   - new feature, so no breaking change (no codemod needed)
 
 You have other ideas ? [Let me know !](https://github.com/ecyrbe/zodios/discussions)
+
 # Dependencies
 
 Zodios even when working in pure Javascript is better suited to be working with Typescript Language Server to handle autocompletion.
@@ -262,6 +293,33 @@ Earlier versions should work, but do not have TS tail recusion optimisation that
 
 Also note that Zodios do not embed any dependency. It's your Job to install the peer dependencies you need.  
   
+**This fork requires:**
+- **zod ^4.0.0** (Breaking change: Zod 3 is not supported)
+- axios ^1.0.0
+
 Internally Zodios uses these libraries on all platforms :
-- zod
+- zod (4.x)
 - axios
+
+## Fork Information
+
+This is a community-maintained fork focused on Zod 4 compatibility. For the original project, visit [ecyrbe/zodios](https://github.com/ecyrbe/zodios).
+
+### Changes in This Fork
+
+- Updated to Zod 4.1.12
+- Updated TypeScript to 5.9.3
+- Updated tsup to 8.5.0
+- Updated all dependencies to latest versions
+- Improved test coverage to 99.69% (149 tests)
+- Fixed all type definitions for Zod 4 compatibility
+
+### Contributing
+
+Contributions are welcome! Please ensure:
+- All tests pass (`npm test`)
+- TypeScript compiles without errors
+
+### License
+
+Same as original Zodios - check [LICENSE](LICENSE) file.

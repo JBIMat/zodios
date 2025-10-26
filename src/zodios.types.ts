@@ -15,7 +15,7 @@ import type {
   UndefinedIfNever,
   Simplify,
 } from "./utils.types";
-import z from "zod";
+import { z } from "zod";
 
 type AxiosRequestConfig = Parameters<typeof axios.request>[0];
 

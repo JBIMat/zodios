@@ -44,14 +44,14 @@ describe("ZodiosPlugins", () => {
   it("should throw if plugin is not registered", () => {
     const plugins = new ZodiosPlugins("any", "any");
     const id = { key: "test-any", value: 5 };
-    expect(() => plugins.eject(id)).toThrowError(
+    expect(() => plugins.eject(id)).toThrow(
       `Plugin with key 'test-any' is not registered for endpoint 'any-any'`
     );
   });
 
   it("should throw if named plugin is not registered", () => {
     const plugins = new ZodiosPlugins("any", "any");
-    expect(() => plugins.eject("test")).toThrowError(
+    expect(() => plugins.eject("test")).toThrow(
       `Plugin with name 'test' not found`
     );
   });

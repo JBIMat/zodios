@@ -1,6 +1,6 @@
 import express from "express";
 import { AddressInfo } from "net";
-import z from "zod";
+import { z } from "zod";
 import {
   makeApi,
   makeCrudApi,
@@ -8,6 +8,9 @@ import {
   Zodios,
   parametersBuilder,
   apiBuilder,
+  makeErrors,
+  makeEndpoint,
+  makeParameters,
 } from "./index";
 import { Assert } from "./utils.types";
 
@@ -37,7 +40,7 @@ describe("makeApi", () => {
           response: z.array(userSchema),
         },
       ])
-    ).toThrowError("Zodios: Duplicate path 'get /users'");
+    ).toThrow("Zodios: Duplicate path 'get /users'");
   });
 
   it("should throw on duplicate alias", () => {
@@ -58,7 +61,7 @@ describe("makeApi", () => {
           response: z.array(userSchema),
         },
       ])
-    ).toThrowError("Zodios: Duplicate alias 'getUsers'");
+    ).toThrow("Zodios: Duplicate alias 'getUsers'");
   });
 
   it("should throw on duplicate Body", () => {
@@ -86,7 +89,7 @@ describe("makeApi", () => {
           response: userSchema,
         },
       ])
-    ).toThrowError("Zodios: Multiple body parameters in endpoint '/users'");
+    ).toThrow("Zodios: Multiple body parameters in endpoint '/users'");
   });
 
   it("should build with parameters (Path,Query,Body,Header)", () => {
@@ -256,6 +259,180 @@ describe("parametersBuilder", () => {
           schema: z.ZodString;
         }
     > = true;
+  });
+
+  it("should build parameters using addQuery", () => {
+    const params = parametersBuilder()
+      .addQuery("search", z.string())
+      .addQuery("page", z.number())
+      .build();
+
+    expect(params).toHaveLength(2);
+    expect(params[0]).toMatchObject({
+      name: "search",
+      type: "Query",
+      schema: expect.any(Object),
+    });
+    expect(params[1]).toMatchObject({
+      name: "page",
+      type: "Query",
+      schema: expect.any(Object),
+    });
+  });
+
+  it("should build parameters using addPath", () => {
+    const params = parametersBuilder()
+      .addPath("id", z.number())
+      .addPath("slug", z.string())
+      .build();
+
+    expect(params).toHaveLength(2);
+    expect(params[0]).toMatchObject({
+      name: "id",
+      type: "Path",
+      schema: expect.any(Object),
+    });
+  });
+
+  it("should build parameters using addHeader", () => {
+    const params = parametersBuilder()
+      .addHeader("Authorization", z.string())
+      .addHeader("Content-Type", z.string())
+      .build();
+
+    expect(params).toHaveLength(2);
+    expect(params[0]).toMatchObject({
+      name: "Authorization",
+      type: "Header",
+      schema: expect.any(Object),
+    });
+  });
+
+  it("should build parameters using addQueries", () => {
+    const params = parametersBuilder()
+      .addQueries({
+        search: z.string(),
+        page: z.number(),
+        limit: z.number(),
+      })
+      .build();
+
+    expect(params).toHaveLength(3);
+    expect(params.map(p => p.name)).toEqual(["search", "page", "limit"]);
+    expect(params.every(p => p.type === "Query")).toBe(true);
+  });
+
+  it("should build parameters using addPaths", () => {
+    const params = parametersBuilder()
+      .addPaths({
+        id: z.number(),
+        slug: z.string(),
+      })
+      .build();
+
+    expect(params).toHaveLength(2);
+    expect(params.map(p => p.name)).toEqual(["id", "slug"]);
+    expect(params.every(p => p.type === "Path")).toBe(true);
+  });
+
+  it("should build parameters using addHeaders", () => {
+    const params = parametersBuilder()
+      .addHeaders({
+        Authorization: z.string(),
+        "X-API-Key": z.string(),
+      })
+      .build();
+
+    expect(params).toHaveLength(2);
+    expect(params.map(p => p.name)).toEqual(["Authorization", "X-API-Key"]);
+    expect(params.every(p => p.type === "Header")).toBe(true);
+  });
+
+  it("should chain different parameter types", () => {
+    const params = parametersBuilder()
+      .addPath("id", z.number())
+      .addQuery("search", z.string())
+      .addHeader("Authorization", z.string())
+      .addBody(z.object({ name: z.string() }))
+      .build();
+
+    expect(params).toHaveLength(4);
+    expect(params[0].type).toBe("Path");
+    expect(params[1].type).toBe("Query");
+    expect(params[2].type).toBe("Header");
+    expect(params[3].type).toBe("Body");
+  });
+  
+});
+
+describe("makeParameters", () => {
+  it("should create parameter definitions", () => {
+    const params = makeParameters([
+      {
+        name: "id",
+        type: "Path",
+        schema: z.number(),
+      },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string(),
+      },
+    ]);
+
+    expect(params).toHaveLength(2);
+    expect(params[0].name).toBe("id");
+    expect(params[0].type).toBe("Path");
+    expect(params[1].name).toBe("search");
+    expect(params[1].type).toBe("Query");
+  });
+
+  it("should preserve parameter schema", () => {
+    const schema = z.string().min(3);
+    const params = makeParameters([
+      {
+        name: "username",
+        type: "Query",
+        schema: schema,
+      },
+    ]);
+
+    expect(params[0].schema).toBe(schema);
+  });
+});
+
+describe("makeErrors", () => {
+  it("should create error definitions", () => {
+    const errors = makeErrors([
+      {
+        status: 404,
+        schema: z.object({ message: z.string() }),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }),
+      },
+    ]);
+
+    expect(errors).toHaveLength(2);
+    expect(errors[0].status).toBe(404);
+    expect(errors[1].status).toBe(500);
+  });
+
+  it("should return errors with correct structure", () => {
+    const errors = makeErrors([
+      {
+        status: 401,
+        schema: z.object({ message: z.string() }),
+        description: "Unauthorized",
+      },
+    ]);
+
+    expect(errors[0]).toMatchObject({
+      status: 401,
+      description: "Unauthorized",
+      schema: expect.any(Object),
+    });
   });
 });
 
@@ -619,5 +796,85 @@ describe("apiBuilder", () => {
         response: usersSchema,
       },
     ]);
+  });
+
+  it("should create builder with no initial endpoint", () => {
+    const builder = apiBuilder();
+    const api = builder
+      .addEndpoint({
+        method: "get",
+        path: "/test",
+        response: z.string(),
+      })
+      .build();
+
+    expect(api).toHaveLength(1);
+    expect(api[0].path).toBe("/test");
+  });
+
+  it("should create builder with initial endpoint", () => {
+    const builder = apiBuilder({
+      method: "get",
+      path: "/initial",
+      response: z.string(),
+    });
+
+    const api = builder
+      .addEndpoint({
+        method: "post",
+        path: "/second",
+        response: z.string(),
+      })
+      .build();
+
+    expect(api).toHaveLength(2);
+    expect(api[0].path).toBe("/initial");
+    expect(api[1].path).toBe("/second");
+  });
+
+  it("should handle adding endpoint to empty api", () => {
+    const builder = new (apiBuilder().constructor as any)([]);
+    const newBuilder = builder.addEndpoint({
+      method: "get",
+      path: "/test",
+      response: z.string(),
+    });
+
+    expect(newBuilder).toBeDefined();
+  });
+});
+
+describe("makeEndpoint", () => {
+  it("should create a single endpoint definition", () => {
+    const endpoint = makeEndpoint({
+      method: "get",
+      path: "/test",
+      response: z.object({ id: z.number() }),
+      description: "Test endpoint",
+    });
+
+    expect(endpoint).toMatchObject({
+      method: "get",
+      path: "/test",
+      description: "Test endpoint",
+    });
+  });
+
+  it("should preserve endpoint parameters", () => {
+    const endpoint = makeEndpoint({
+      method: "post",
+      path: "/users",
+      parameters: [
+        {
+          name: "body",
+          type: "Body",
+          schema: z.object({ name: z.string() }),
+        },
+      ],
+      response: z.object({ id: z.number() }),
+    });
+
+    expect(endpoint.parameters).toHaveLength(1);
+    expect(endpoint.parameters![0].name).toBe("body");
   });
 });

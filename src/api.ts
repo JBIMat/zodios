@@ -7,7 +7,7 @@ import {
   ZodiosEndpointDefinitions,
   ZodiosEndpointError,
 } from "./zodios.types";
-import z, { ZodRawShape } from "zod";
+import { z, ZodRawShape } from "zod";
 import { capitalize } from "./utils";
 import { Narrow, TupleFlat, UnionToTuple } from "./utils.types";
 
@@ -282,7 +282,7 @@ export function makeCrudApi<
           name: "body",
           type: "Body",
           description: "The object to create",
-          schema: schema.partial() as z.Schema<Partial<Schema>>,
+          schema: schema.partial(),
         },
       ],
       // @ts-expect-error
@@ -319,7 +319,7 @@ export function makeCrudApi<
           name: "body",
           type: "Body",
           description: "The object to patch",
-          schema: schema.partial() as z.Schema<Partial<Schema>>,
+          schema: schema.partial(),
         },
       ],
       // @ts-expect-error

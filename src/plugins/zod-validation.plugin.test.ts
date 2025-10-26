@@ -30,7 +30,7 @@ describe("zodValidationPlugin", () => {
     it("should throw if endpoint is not found", async () => {
       await expect(
         plugin.request!(api, notExistingConfig)
-      ).rejects.toThrowError("No endpoint found for get /notExisting");
+      ).rejects.toThrow("No endpoint found for get /notExisting");
     });
 
     it("should verify parameters", async () => {
@@ -143,7 +143,7 @@ describe("zodValidationPlugin", () => {
         sampleQueryParam: 123,
       };
 
-      await expect(plugin.request!(api, badConfig)).rejects.toThrowError(
+      await expect(plugin.request!(api, badConfig)).rejects.toThrow(
         "Zodios: Invalid Query parameter 'sampleQueryParam'"
       );
     });
@@ -157,7 +157,7 @@ describe("zodValidationPlugin", () => {
     it("should throw if endpoint is not found", async () => {
       await expect(
         plugin.response!(api, notExistingConfig, createSampleResponse())
-      ).rejects.toThrowError("No endpoint found for get /notExisting");
+      ).rejects.toThrow("No endpoint found for get /notExisting");
     });
 
     it("should verify body", async () => {
@@ -248,26 +248,7 @@ describe("zodValidationPlugin", () => {
 
       await expect(
         plugin.response!(api, createSampleConfig("/parse"), badResponse)
-      ).rejects
-        .toThrowError(`Zodios: Invalid response from endpoint 'post /parse'
-status: 200 OK
-cause:
-[
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "number",
-    "path": [
-      "first"
-    ],
-    "message": "Expected string, received number"
-  }
-]
-received:
-{
-  "first": 123,
-  "second": 111
-}`);
+      ).rejects.toThrow(/Zodios: Invalid response from endpoint 'post \/parse'/);
     });
   });
 

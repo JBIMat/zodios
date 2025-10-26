@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import express from "express";
 import { AddressInfo } from "net";
 import { z, ZodError } from "zod";
@@ -40,9 +40,10 @@ describe("Zodios", () => {
       res.status(502).json({ error: { message: "bad gateway" } });
     });
     app.get("/queries", (req, res) => {
-      res.status(200).json({
-        queries: req.query.id,
-      });
+      // Axios sends array params as 'id[]' by default
+      const id = req.query['id[]'] || req.query.id;
+      const queries = Array.isArray(id) ? id.map(String) : id ? [String(id)] : [];
+      res.status(200).json({ queries });
     });
     app.get("/:id", (req, res) => {
       res.status(200).json({ id: Number(req.params.id), name: "test" });
@@ -94,19 +95,19 @@ describe("Zodios", () => {
 
   it("should throw if baseUrl is not provided", () => {
     // @ts-ignore
-    expect(() => new Zodios(undefined, [])).toThrowError(
+    expect(() => new Zodios(undefined, [])).toThrow(
       "Zodios: missing base url"
     );
   });
 
   it("should throw if api is not provided", () => {
     // @ts-ignore
-    expect(() => new Zodios()).toThrowError("Zodios: missing api description");
+    expect(() => new Zodios()).toThrow("Zodios: missing api description");
   });
 
   it("should throw if api is not an array", () => {
     // @ts-ignore
-    expect(() => new Zodios({})).toThrowError("Zodios: api must be an array");
+    expect(() => new Zodios({})).toThrow("Zodios: api must be an array");
   });
 
   it("should return the underlying axios instance", () => {
@@ -152,7 +153,7 @@ describe("Zodios", () => {
             }),
           },
         ])
-    ).toThrowError("Zodios: Duplicate path 'get /:id'");
+    ).toThrow("Zodios: Duplicate path 'get /:id'");
   });
 
   it("should get base url", () => {
@@ -229,7 +230,7 @@ describe("Zodios", () => {
   it("should throw if invalid parameters when registering a plugin", () => {
     const zodios = new Zodios(`http://localhost:${port}`, []);
     // @ts-ignore
-    expect(() => zodios.use(0)).toThrowError("Zodios: invalid plugin");
+    expect(() => zodios.use(0)).toThrow("Zodios: invalid plugin");
   });
 
   it("should throw if invalid alias when registering a plugin", () => {
@@ -250,7 +251,7 @@ describe("Zodios", () => {
         // @ts-ignore
         request: async (_, config) => config,
       })
-    ).toThrowError("Zodios: no alias 'tests' found to register plugin");
+    ).toThrow("Zodios: no alias 'tests' found to register plugin");
   });
 
   it("should throw if invalid endpoint when registering a plugin", () => {
@@ -270,7 +271,7 @@ describe("Zodios", () => {
         // @ts-ignore
         request: async (_, config) => config,
       })
-    ).toThrowError(
+    ).toThrow(
       "Zodios: no endpoint 'get /test/:id' found to register plugin"
     );
   });
@@ -791,13 +792,12 @@ status: 200 OK
 cause:
 [
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "more"
     ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   }
 ]
 received:
@@ -1307,5 +1307,36 @@ received:
     ]);
     const response = await zodios.post("/text", "test");
     expect(response).toEqual("test");
+  });
+
+  describe("advanced configuration", () => {
+    it("should use provided axios instance", () => {
+      const customAxios = axios.create({
+        timeout: 5000,
+      });
+
+      const zodios = new Zodios(
+        `http://localhost:${port}`,
+        [{ method: "get", path: "/token", response: z.object({ token: z.string() }) }],
+        { axiosInstance: customAxios }
+      );
+
+      expect(zodios.axios).toBe(customAxios);
+    });
+
+    it("should handle binary request format", async () => {
+      const zodios = new Zodios(`http://localhost:${port}`, [
+        {
+          method: "post",
+          path: "/text",
+          requestFormat: "binary",
+          parameters: [{ name: "body", type: "Body", schema: z.string() }],
+          response: z.string(),
+        },
+      ]);
+
+      const response = await zodios.post("/text", "binary data");
+      expect(response).toBeDefined();
+    });
   });
 });
